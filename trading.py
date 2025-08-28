@@ -1,0 +1,75 @@
+import time
+from solana.rpc.async_api import AsyncClient
+from solana.transaction import Transaction
+from solana.system_program import TransferParams, transfer
+from solders.keypair import Keypair
+from config import PRIVATE_KEY, RPC_ENDPOINT, BUY_AMOUNT, TRANSACTION_FEE, NUM_BUYS
+from filters import validate_token
+
+class TradingBot:
+    def __init__(self):
+        self.client = AsyncClient(RPC_ENDPOINT)
+        self.keypair = Keypair.from_base58_string(PRIVATE_KEY)
+        self.buys_completed = 0
+        self.buy_records = []
+        self.last_cycle_time = time.time()
+
+    async def buy_token(self, token_address):
+        """Execute a buy transaction for a token."""
+        if self.buys_completed >= NUM_BUYS:
+            print("Reached maximum buys for this cycle.")
+            return False
+
+        if not await validate_token(token_address, self.client):
+            print(f"Token {token_address} failed validation.")
+            return False
+
+        try:
+            # Calculate total cost including fees
+            total_cost = BUY_AMOUNT + TRANSACTION_FEE
+
+            # Check wallet balance
+            balance = await self.client.get_balance(self.keypair.pubkey())
+            if balance.value / 1e9 < total_cost:
+                print("Insufficient balance for buy.")
+                return False
+
+            # Placeholder: Construct buy transaction for Pump.fun
+            # Use Metis API or direct program interaction
+            tx = Transaction().add(
+                transfer(
+                    TransferParams(
+                        from_pubkey=self.keypair.pubkey(),
+                        to_pubkey=self.keypair.pubkey(),  # Replace with Pump.fun account
+                        lamports=int(BUY_AMOUNT * 1e9)
+                    )
+                )
+            )
+
+            # Sign and send transaction
+            tx_resp = await self.client.send_transaction(tx, self.keypair)
+            print(f"Buy executed for {token_address}: {tx_resp.value}")
+
+            # Record buy details
+            self.buy_records.append({
+                "token_address": token_address,
+                "amount": BUY_AMOUNT,
+                "timestamp": time.time(),
+                "tx_id": tx_resp.value
+            })
+            self.buys_completed += 1
+
+            return True
+
+        except Exception as e:
+            print(f"Error executing buy for {token_address}: {e}")
+            return False
+
+    async def check_cycle(self):
+        """Check if 30 days have passed to reset buy cycle."""
+        current_time = time.time()
+        if (current_time - self.last_cycle_time) >= 30 * 24 * 60 * 60:  # 30 days in seconds
+            self.buys_completed = 0
+            self.last_cycle_time = current_time
+            return True
+        return False
