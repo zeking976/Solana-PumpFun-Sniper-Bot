@@ -1,7 +1,9 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load from ~/t.env (or adjust the path if t.env is elsewhere)
+dotenv_path = os.path.expanduser("~/t.env")
+load_dotenv(dotenv_path=dotenv_path)
 
 # Solana configuration
 PRIVATE_KEY = os.getenv("PRIVATE_KEY")
