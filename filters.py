@@ -1,5 +1,5 @@
 import aiohttp
-import json
+import time
 from solana.rpc.async_api import AsyncClient
 from solana.rpc.types import TokenAccountOpts
 from config import MIN_LIQUIDITY_USD, MAX_TOKEN_AGE_MINUTES, MAX_TOP_10_HOLDERS_PERCENT, PUMP_FUN_PROGRAM_ID
@@ -67,40 +67,57 @@ async def is_in_bonding_phase(token_address, client):
     """Check if token is in bonding phase by inspecting Pump.fun program accounts."""
     # Simplified check: Verify token is associated with Pump.fun bonding curve
     # In production, query the bonding curve account to confirm active status
-    bonding_curve_account = await client.get_program_accounts(PUMP_FUN_PROGRAM_ID)
-    # Placeholder logic: Assume bonding phase if token is newly created
-    return True  # Replace with actual bonding curve check
+    try:
+        bonding_curve_account = await client.get_program_accounts(PUMP_FUN_PROGRAM_ID)
+        # Placeholder logic: Assume bonding phase if token is newly created
+        return True  # Replace with actual bonding curve check
+    except Exception as e:
+        print(f"Error checking bonding phase for {token_address}: {e}")
+        return False
 
 async def check_holder_distribution(token_address, client):
     """Check if top 10 holders own less than 50% of supply."""
-    token_accounts = await client.get_token_accounts_by_owner(TokenAccountOpts(token_address))
-    total_supply = await client.get_token_supply(token_address)
-    total_supply_value = total_supply.value.ui_amount
+    try:
+        token_accounts = await client.get_token_accounts_by_owner(TokenAccountOpts(token_address))
+        total_supply = await client.get_token_supply(token_address)
+        total_supply_value = total_supply.value.ui_amount
 
-    balances = [account.value.ui_amount for account in token_accounts.value]
-    balances.sort(reverse=True)
-    top_10_sum = sum(balances[:10]) if len(balances) >= 10 else sum(balances)
-    top_10_percent = (top_10_sum / total_supply_value) * 100
+        balances = [account.value.ui_amount for account in token_accounts.value]
+        balances.sort(reverse=True)
+        top_10_sum = sum(balances[:10]) if len(balances) >= 10 else sum(balances)
+        top_10_percent = (top_10_sum / total_supply_value) * 100
 
-    return top_10_percent <= MAX_TOP_10_HOLDERS_PERCENT
+        return top_10_percent <= MAX_TOP_10_HOLDERS_PERCENT
+    except Exception as e:
+        print(f"Error checking holder distribution for {token_address}: {e}")
+        return False
 
 async def is_rug_or_honeypot(token_address):
     """Check if token is a rug pull or honeypot using RugCheck API."""
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"https://api.rugcheck.xyz/v1/tokens/{token_address}/report") as response:
-            data = await response.json()
-            risk_score = data.get("risk_score", 100)
-            return risk_score > 20  # Adjust threshold based on testing
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://api.rugcheck.xyz/v1/tokens/{token_address}/report") as response:
+                data = await response.json()
+                risk_score = data.get("risk_score", 100)
+                return risk_score > 20  # Adjust threshold based on testing
+    except Exception as e:
+        print(f"Error checking rug/honeypot for {token_address}: {e}")
+        return False
 
 async def check_dev_history(token_address, client):
     """Check if token's developer has a history of successful tokens."""
     # Placeholder: Query Solana blockchain for dev's previous tokens
-    # Check if any reached 10x, 20x, 50x, or 100x
-    # Use services like Solscan or custom data aggregation
-    return True  # Replace with actual dev history check
+    try:
+        return True  # Replace with actual dev history check
+    except Exception as e:
+        print(f"Error checking dev history for {token_address}: {e}")
+        return False
 
 async def check_social_sentiment(token_address):
     """Check social media for trending narratives."""
     # Placeholder: Use Twitter/Discord APIs to check mentions and sentiment
-    # Look for trending narratives (e.g., memecoins, AI, DeFi)
-    return True  # Replace with actual sentiment analysis
+    try:
+        return True  # Replace with actual sentiment analysis
+    except Exception as e:
+        print(f"Error checking social sentiment for {token_address}: {e}")
+        return False
