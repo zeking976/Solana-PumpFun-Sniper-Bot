@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-# Load from ~/t.env (or adjust the path if t.env is elsewhere)
+# Load from ~/t.env
 dotenv_path = os.path.expanduser("~/t.env")
 load_dotenv(dotenv_path=dotenv_path)
 
@@ -12,11 +12,13 @@ RPC_WEBSOCKET_ENDPOINT = os.getenv("RPC_WEBSOCKET_ENDPOINT")
 
 # Telegram configuration
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+ADMIN_USER_ID = os.getenv("ADMIN_USER_ID")
 
 # Trading configuration
-NUM_BUYS = int(os.getenv("NUM_BUYS", 10))  # Default to 10 buys
-BUY_AMOUNT = float(os.getenv("BUY_AMOUNT", 0.1))  # Amount in SOL per buy
-TRANSACTION_FEE = float(os.getenv("TRANSACTION_FEE", 0.001))  # Fee per transaction
+NUM_BUYS = int(os.getenv("NUM_BUYS", 10))
+BUY_AMOUNT = float(os.getenv("BUY_AMOUNT", 0.1))
+TRANSACTION_FEE = float(os.getenv("TRANSACTION_FEE", 0.001))
 
 # Filter thresholds
 MIN_LIQUIDITY_USD = float(os.getenv("MIN_LIQUIDITY_USD", 1000))
