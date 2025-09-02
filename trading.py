@@ -3,7 +3,7 @@ from solana.rpc.async_api import AsyncClient
 from solana.transaction import Transaction
 from solana.system_program import TransferParams, transfer
 from solders.keypair import Keypair
-from config import PRIVATE_KEY, RPC_ENDPOINT, BUY_AMOUNT, TRANSACTION_FEE, NUM_BUYS
+from config import PRIVATE_KEY, RPC_ENDPOINT, BUY_AMOUNT, TRANSACTION_FEE, NUM_BUYS, ADMIN_USER_ID
 from filters import validate_token
 
 class TradingBot:
@@ -14,8 +14,12 @@ class TradingBot:
         self.buy_records = []
         self.last_cycle_time = time.time()
 
-    async def buy_token(self, token_address):
+    async def buy_token(self, token_address, user_id=None):
         """Execute a buy transaction for a token."""
+        if user_id and str(user_id) != ADMIN_USER_ID:
+            print("Only admin can buy tokens.")
+            return False
+
         if self.buys_completed >= NUM_BUYS:
             print("Reached maximum buys for this cycle.")
             return False
@@ -35,7 +39,6 @@ class TradingBot:
                 return False
 
             # Placeholder: Construct buy transaction for Pump.fun
-            # Use Metis API or direct program interaction
             tx = Transaction().add(
                 transfer(
                     TransferParams(
